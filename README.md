@@ -96,3 +96,9 @@ POC Seeker supports a range of command-line options that enable users to customi
 - `--disable-nvd`
   - **Description**: By default, the script will try to collect CVE information from the National Vulnerability Database (NVD) database. You can use this option to prevent the script from collecting this informations.
   - **Example**: `./poc-seeker.sh --query "CVE-2023-40028" --disable-nvd`
+
+## Disclaimer
+
+This repository and all associated files and resources are provided **for research purposes only**. The tools and information contained within this repository are intended to support security research and educational purposes. **This includes the use of web scraping technologies to gather data relevant to the research being conducted.**
+
+Users must comply with all applicable laws and regulations regarding web scraping and data collection. The owner and contributors of this repository do not accept any responsibility for misuse of the information provided here or for any legal consequences or damages arising from such use.
