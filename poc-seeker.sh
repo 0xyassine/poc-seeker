@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
-TOOL_VERSION=1.0
+TOOL_VERSION=1.1
 
 ACCEPTED_SOURCES=(github sploitus exploit-db vulnerability-lab packetstormsecurity)
 
@@ -54,7 +54,8 @@ function logo()
   echo "╚═╝      ╚═════╝  ╚═════╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝"
   echo
   printf "                                                     ${BLUE}Developer${NC}: 0xyassine\n"
-  printf "                                                                ${RED}v$TOOL_VERSION${NC}\n"
+  printf "                                                     ${BLUE}Version${NC}  : ${RED}$TOOL_VERSION${NC}\n"
+  printf "                                                                "
   echo
 }
 
@@ -99,6 +100,37 @@ function spinner()
 	done
 }
 
+function install_packages()
+{
+  echo
+  local PACKAGE_NAME=$1
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID_LIKE
+  else
+    printf "* ${CYAN}$PACKAGE_NAME${NC} is missing\n"
+    return 1
+  fi
+  case $OS in
+    ubuntu|debian|linuxmint)
+      printf "* ${CYAN}$PACKAGE_NAME${NC} is missing, what about trying ${CYAN}sudo apt update && sudo apt install -y $PACKAGE_NAME ${NC}😀\n"
+      ;;
+    fedora|centos|rhel)
+      if [[ "$OS" == "centos" || "$OS" == "rhel" ]]; then
+        printf "* ${CYAN}$PACKAGE_NAME${NC} is missing, what about trying ${CYAN}sudo yum install -y $PACKAGE_NAME ${NC}😀\n"
+      else
+        printf "* ${CYAN}$PACKAGE_NAME${NC} is missing, what about trying ${CYAN}sudo dnf install -y $PACKAGE_NAME ${NC}😀\n"
+      fi
+      ;;
+    arch|manjaro)
+      printf "* ${CYAN}$PACKAGE_NAME${NC} is missing, what about trying ${CYAN}sudo pacman -Syu --noconfirm $PACKAGE_NAME ${NC}😀\n"
+      ;;
+    *)
+      printf "* ${CYAN}$PACKAGE_NAME${NC} is missing\n"
+      ;;
+  esac
+}
+
 function verify_packages()
 {
   REQUIRED_PACKAGES=(curl jq)
@@ -111,8 +143,9 @@ function verify_packages()
   if [ ${#MISSING_PACKAGES[@]} -ne 0 ];then
     red "😞 Please install the following packages before executing the script 😞\n"
     for MISSING in ${MISSING_PACKAGES[@]};do
-      echo " - $MISSING"
+      install_packages "$MISSING"
     done
+    echo
     exit 1
   fi
 }
@@ -163,7 +196,18 @@ RANDOM_UA=${USER_AGENTS[$RANDOM % ${#USER_AGENTS[@]}]}
 function exploit-db()
 {
   if ! which searchsploit &> /dev/null;then
-    echo "😔 You have to install [ searchsploit ] to search into exploit-db 😔"
+    printf "😔${CYAN} You have to install${NC} ${RED}searchsploit${NC} ${CYAN}to search into exploit-db${NC} 😔\n"
+    if [ -f /etc/os-release ]; then
+      . /etc/os-release
+      OS=$ID
+      if [[ "$OS" == "kali" ]];then
+        printf " Seems like you are using Kali linux, what about trying ${CYAN}sudo apt update && sudo apt install -y exploitdb ${NC}😀\n"
+      else
+        printf "You can check ${CYAN}https://gitlab.com/exploit-database/exploitdb${NC} 😀\n"
+      fi
+    else
+      printf "You can check ${CYAN}https://gitlab.com/exploit-database/exploitdb${NC} 😀\n"
+    fi
   else
     spinner "Searching" "exploit db" &
     if [[ ! -z "$CVE_FROM_QUERY" ]];then
@@ -403,6 +447,7 @@ function print_item()
 NVD_DISABLED=false
 function nvd_collect_information()
 {
+  cyan "🤓 Hold on, trying to collect few details 🤓\n"
   CVE_FROM_QUERY=$(echo "$CVE_FROM_QUERY" | tr 'a-z' 'A-Z')
   if [[ ! -z "$NVD_API_KEY" ]];then
     ALL_DETAILS=$(curl -m 15 --connect-timeout 15 -s --location "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=$CVE_FROM_QUERY" -H "apiKey: $NVD_API_KEY")
