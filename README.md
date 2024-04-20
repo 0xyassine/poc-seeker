@@ -15,7 +15,7 @@ POC Seeker is an innovative tool designed to streamline the process of finding a
 
 ## Installation
 
-POC Seeker cna be installed using one line
+POC Seeker can be installed using one line
 
 ```
 sudo curl -s https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh -o /usr/local/bin/poc-seeker && sudo chmod +x /usr/local/bin/poc-seeker
