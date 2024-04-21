@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
-TOOL_VERSION=1.2
+TOOL_VERSION=1.3
 
 ACCEPTED_SOURCES=(github sploitus exploit-db vulnerability-lab packetstormsecurity)
 
@@ -162,14 +162,16 @@ function check_curl_features()
 function check_for_update()
 {
   SCRIPT_RAW_URL="https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh"
-  REMOTE_VERSION=$(curl -s  "$SCRIPT_RAW_URL" | grep 'TOOL_VERSION=' | awk -F= '{print $2}' | head -n 1)
-  if [[ "$REMOTE_VERSION" == "$TOOL_VERSION" ]];then
-    green "😎 The script is up-to-date 😎 \n"
-    echo
-  else
-    yellow "You are using an outdated script version. The update is really easy using this command 🤓\n"
-    cyan "sudo curl -s https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh -o /usr/local/bin/poc-seeker && sudo chmod +x /usr/local/bin/poc-seeker\n"
-    echo
+  REMOTE_VERSION=$(curl -m 5 --connect-timeout 5 -s "$SCRIPT_RAW_URL" 2>/dev/null | grep 'TOOL_VERSION=' | awk -F= '{print $2}' | head -n 1)
+  if [ $? -eq 0 ];then
+    if [[ "$REMOTE_VERSION" == "$TOOL_VERSION" ]];then
+      green "😎 The script is up-to-date 😎 \n"
+      echo
+    else
+      yellow "You are using an outdated script version. The update is really easy using this command 🤓\n"
+      cyan "sudo curl -s https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh -o /usr/local/bin/poc-seeker && sudo chmod +x /usr/local/bin/poc-seeker\n"
+      echo
+    fi
   fi
 }
 
@@ -520,8 +522,6 @@ function nvd_collect_information()
 }
 
 logo
-echo
-check_for_update
 verify_packages
 check_curl_features
 
@@ -667,6 +667,9 @@ else
     fi
   fi
 fi
+
+echo
+check_for_update
 
 if [ -z "$SPLOITUS_LIMIT" ] || [ $SPLOITUS_LIMIT -lt 10 ];then
   SPLOITUS_LIMIT=10
