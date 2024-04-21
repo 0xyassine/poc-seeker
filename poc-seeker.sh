@@ -162,7 +162,7 @@ function check_curl_features()
 function check_for_update()
 {
   SCRIPT_RAW_URL="https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh"
-  REMOTE_VERSION=$(curl -s  "$SCRIPT_RAW_URL" | grep 'TOOL_VERSION=' | awk -F= '{print $2}')
+  REMOTE_VERSION=$(curl -s  "$SCRIPT_RAW_URL" | grep 'TOOL_VERSION=' | awk -F= '{print $2}' | head -n 1)
   if [[ "$REMOTE_VERSION" == "$TOOL_VERSION" ]];then
     green "😎 The script is up-to-date 😎 \n"
     echo
