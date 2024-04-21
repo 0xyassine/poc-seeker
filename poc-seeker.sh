@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
-TOOL_VERSION=1.1
+TOOL_VERSION=1.2
 
 ACCEPTED_SOURCES=(github sploitus exploit-db vulnerability-lab packetstormsecurity)
 
@@ -159,6 +159,20 @@ function check_curl_features()
   fi
 }
 
+function check_for_update()
+{
+  SCRIPT_RAW_URL="https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh"
+  REMOTE_VERSION=$(curl -s  "$SCRIPT_RAW_URL" | grep 'TOOL_VERSION=' | awk -F= '{print $2}')
+  if [[ "$REMOTE_VERSION" == "$TOOL_VERSION" ]];then
+    green "😎 The script is up-to-date 😎 \n"
+    echo
+  else
+    yellow "You are using an outdated script version. The update is really easy using this command 🤓\n"
+    cyan "sudo curl -s https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh -o /usr/local/bin/poc-seeker && sudo chmod +x /usr/local/bin/poc-seeker\n"
+    echo
+  fi
+}
+
 #VARIABLES
 POTENTIAL_FINDING=()
 HAVE_A_LOOK=()
@@ -292,7 +306,30 @@ function github()
   for REPO in $REPOS; do
     sleep 0.5
     #GET THE LIST OF FILES INSIDE THE REPOSITORY
-    github_repo_files "$REPO"
+    if ! $IS_RATE_LIMITED && ! $GITHUB_EXTENSIONS_FAILED;then
+      github_repo_files "$REPO"
+    else
+      if $GITHUB_SEARCH_FAILED;then
+        echo
+        red "\n 🤯 Searching github repositories failed. Results from GitHub may not be accurate 🤯 \n"
+        echo
+      fi
+      if $GITHUB_EXTENSIONS_FAILED;then
+        echo
+        red "\n 🤯 Searching github for file extensions failed. Results from GitHub may not be accurate 🤯 \n"
+        echo
+      fi
+      if $IS_RATE_LIMITED;then
+        echo
+        red "\n 🤯 GitHub Api rate limit is hit. Results from GitHub may not be accurate 🤯 \n"
+        echo
+      fi
+      if [ -z $GITHUB_TOKEN ];then
+        printf " * Consider using ${CYAN}--github-access-token${NC} option 😀\n"
+      fi
+      kill "$!"
+      return
+    fi
     POTENTIAL=false
     POSSIBLE=false
     REPO_WITH_README=false
@@ -334,14 +371,6 @@ function github()
   kill "$!"
   if ! $GITHUB_SEARCH_FAILED;then
     printf "\r🤞   Searching ${RED}github${NC} ${GREEN}                 DONE${NC}\n"
-  fi
-  if $GITHUB_EXTENSIONS_FAILED;then
-    red "🤯 Searching github for file extensions failed 🤯 \n"
-    echo
-  fi
-  if $IS_RATE_LIMITED;then
-    red "\n 🤯 Api rate limit is hit 🤯 \n"
-    echo
   fi
 }
 
@@ -491,7 +520,8 @@ function nvd_collect_information()
 }
 
 logo
-
+echo
+check_for_update
 verify_packages
 check_curl_features
 
