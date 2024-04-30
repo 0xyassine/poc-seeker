@@ -9,7 +9,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 CYAN='\033[1;36m'
 YELLOW='\033[1;33m'
-TOOL_VERSION=1.3
+TOOL_VERSION=1.4
 
 ACCEPTED_SOURCES=(github sploitus exploit-db vulnerability-lab packetstormsecurity)
 
@@ -76,6 +76,8 @@ function help()
   printf "${CYAN}  -c  | --check${NC}               The script accurately checks whether the CVE identifier is defined\n"
   printf "                              in the exploit to improve precision (optional) 🫠\n"
   printf "${CYAN}  -sl | --sploitus-limit${NC}      Limit the number of entries returned by sploitus (optional) 🙂\n"
+  printf "                              default : ${CYAN}10${NC}\n"
+  printf "${CYAN}  -gl | --github-limit${NC}        Limit the number of entries returned by github (optional) 🙂\n"
   printf "                              default : ${CYAN}10${NC}\n"
   printf "${CYAN}  -o  | --output${NC}              Save the output to a file 🫣\n"
   printf "${CYAN}  --github-access-token${NC}       Supply a GitHub access token to increase the API request limit (optional) 😀\n"
@@ -162,7 +164,7 @@ function check_curl_features()
 function check_for_update()
 {
   SCRIPT_RAW_URL="https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh"
-  REMOTE_VERSION=$(curl -m 5 --connect-timeout 5 -s "$SCRIPT_RAW_URL" 2>/dev/null | grep 'TOOL_VERSION=' | awk -F= '{print $2}' | head -n 1)
+  REMOTE_VERSION=$(curl -r 0-160 -m 5 --connect-timeout 5 -s "$SCRIPT_RAW_URL" 2>/dev/null | grep 'TOOL_VERSION=' | awk -F= '{print $2}' | head -n 1)
   if [ $? -eq 0 ];then
     if [[ "$REMOTE_VERSION" == "$TOOL_VERSION" ]];then
       green "😎 The script is up-to-date 😎 \n"
@@ -253,11 +255,11 @@ function github_repos()
 {
   local QUERY="$@"
   if [ ! -z $GITHUB_TOKEN ];then
-    QUERY_RESULT=$(curl -m 15 --connect-timeout 15 -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/search/repositories?q=${QUERY}+in:name,description" 2>/dev/null)
-    REPOS=$( echo "$QUERY_RESULT" | jq -r '.items[] | .full_name' 2>/dev/null)
+    QUERY_RESULT=$(curl -m 15 --connect-timeout 15 -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/search/repositories?q=${QUERY}+in:name,description&sort=stars&order=desc" 2>/dev/null)
+    REPOS=$( echo "$QUERY_RESULT" | jq -r '.items[] | .full_name' 2>/dev/null | head -n $GITHUB_LIMIT)
   else
-    QUERY_RESULT=$(curl -m 15 --connect-timeout 15 -s -H "Accept: application/vnd.github+json" "https://api.github.com/search/repositories?q=${QUERY}+in:name,description" 2>/dev/null)
-    REPOS=$(echo "$QUERY_RESULT" | jq -r '.items[] | .full_name' 2>/dev/null)
+    QUERY_RESULT=$(curl -m 15 --connect-timeout 15 -s -H "Accept: application/vnd.github+json" "https://api.github.com/search/repositories?q=${QUERY}+in:name,description&sort=stars&order=desc" 2>/dev/null)
+    REPOS=$(echo "$QUERY_RESULT" | jq -r '.items[] | .full_name' 2>/dev/null | head -n $GITHUB_LIMIT)
   fi
   if [ $? -eq 0 ];then
     REPOS=$(echo $REPOS | tr '\n' ' ')
@@ -634,6 +636,20 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       ;;
+    -gl|--github-limit)
+      if [ -n "$2" ]; then
+        GITHUB_LIMIT="$2"
+        if ! [[ $GITHUB_LIMIT =~ ^[0-9]+$ ]];then
+          red "😔 Opsss ! GitHub search limit can only be a number 😔\n"
+          help
+          exit 1
+        fi
+        shift 2
+      else
+        red "😔 Opsss ! GitHub search limit is not provided after the -gl or --github-limit option 😔\n"
+        exit 1
+      fi
+      ;;
     *)
       red "😱 Oh noo, you provided unknown argument [ $1 ] 😱\n"
       green "Maybe it's time to have a look at the help menu again 😉\n"
@@ -673,6 +689,9 @@ check_for_update
 
 if [ -z "$SPLOITUS_LIMIT" ] || [ $SPLOITUS_LIMIT -lt 10 ];then
   SPLOITUS_LIMIT=10
+fi
+if [ -z "$GITHUB_LIMIT" ];then
+  GITHUB_LIMIT=10
 fi
 
 #EXTRACT THE CVE FROM THE QUERY

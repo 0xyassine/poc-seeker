@@ -15,7 +15,7 @@ POC Seeker is an innovative tool designed to streamline the process of finding a
 
 ## Installation
 
-POC Seeker can be installed using one line
+POC Seeker cna be installed using one line
 
 ```
 sudo curl -s https://raw.githubusercontent.com/0xyassine/poc-seeker/master/poc-seeker.sh -o /usr/local/bin/poc-seeker && sudo chmod +x /usr/local/bin/poc-seeker
@@ -80,6 +80,11 @@ POC Seeker supports a range of command-line options that enable users to customi
   - **Description**: Sets a limit on the number of entries returned by Sploitus, allowing users to control the volume of data fetched. This is optional and can help in managing the output more effectively.
   - **Default Limit**: 10
   - **Example**: `./poc-seeker.sh --sploitus-limit 20 --query "CVE-2023-40028"`
+
+- `-gl` | `--github-limit`
+  - **Description**: Sets a limit on the number of entries returned by GitHub, allowing users to control the volume of data fetched. This is optional and can help in managing the output more effectively.
+  - **Default Limit**: 10
+  - **Example**: `./poc-seeker.sh --github-limit 20 --query "CVE-2023-40028"`
 
 - `-o` | `--output`
   - **Description**: Saves the output of the search to a file. This option is beneficial for users who wish to review the results at a later time or keep a record of their searches.
